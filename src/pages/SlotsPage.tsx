@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { ParkingSlot, SlotLocation } from "@/types";
+import { ParkingSlot, SlotLocation, SlotStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/PageTitle";
 import { SearchInput } from "@/components/SearchInput";
@@ -58,7 +58,7 @@ export default function SlotsPage() {
           slotNumber: `P${i.toString().padStart(3, '0')}`,
           size: i % 3 === 0 ? "large" : i % 2 === 0 ? "medium" : "small",
           vehicleType: i % 4 === 0 ? "truck" : i % 3 === 0 ? "motorcycle" : "car",
-          status: i % 5 === 0 ? "unavailable" : "available",
+          status: i % 5 === 0 ? "unavailable" : "available", // This uses SlotStatus values
           location: locations[i % 4],
         });
       }
@@ -96,7 +96,7 @@ export default function SlotsPage() {
     
     // Apply status filter
     if (statusFilter) {
-      filtered = filtered.filter(slot => slot.status === statusFilter);
+      filtered = filtered.filter(slot => slot.status === statusFilter as SlotStatus);
     }
     
     // Apply size filter
@@ -276,7 +276,7 @@ export default function SlotsPage() {
                             // Toggle slot status
                             const updatedSlots = slots.map(s =>
                               s.id === slot.id
-                                ? { ...s, status: s.status === 'available' ? 'unavailable' : 'available' }
+                                ? { ...s, status: s.status === 'available' ? 'unavailable' : 'available' as SlotStatus }
                                 : s
                             );
                             setSlots(updatedSlots);
