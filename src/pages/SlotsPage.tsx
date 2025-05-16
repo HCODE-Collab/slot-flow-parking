@@ -45,42 +45,52 @@ export default function SlotsPage() {
 
   useEffect(() => {
     const fetchSlots = async () => {
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Generate mock slots data
-      const mockSlots: ParkingSlot[] = [];
-      const locations: SlotLocation[] = ["north", "south", "east", "west"];
-      
-      for (let i = 1; i <= 70; i++) {
-        mockSlots.push({
-          id: i,
-          slotNumber: `P${i.toString().padStart(3, '0')}`,
-          size: i % 3 === 0 ? "large" : i % 2 === 0 ? "medium" : "small",
-          vehicleType: i % 4 === 0 ? "truck" : i % 3 === 0 ? "motorcycle" : "car",
-          status: i % 5 === 0 ? "unavailable" : "available", // This uses SlotStatus values
-          location: locations[i % 4],
+      setIsLoading(true);
+      try {
+        // In a real app, this would be an API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Generate mock slots data
+        const mockSlots: ParkingSlot[] = [];
+        const locations: SlotLocation[] = ["north", "south", "east", "west"];
+        const statuses: SlotStatus[] = ["available", "unavailable"];
+        
+        for (let i = 1; i <= 70; i++) {
+          mockSlots.push({
+            id: i,
+            slotNumber: `P${i.toString().padStart(3, '0')}`,
+            size: i % 3 === 0 ? "large" : i % 2 === 0 ? "medium" : "small",
+            vehicleType: i % 4 === 0 ? "truck" : i % 3 === 0 ? "motorcycle" : "car",
+            status: i % 5 === 0 ? "unavailable" as SlotStatus : "available" as SlotStatus,
+            location: locations[i % 4],
+          });
+        }
+        
+        setSlots(mockSlots);
+        applyFilters(mockSlots);
+      } catch (error) {
+        console.error("Error fetching slots:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load parking slots. Please try again later.",
+          variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
-      
-      setSlots(mockSlots);
-      setFilteredSlots(mockSlots);
-      setTotalItems(mockSlots.length);
-      setTotalPages(Math.ceil(mockSlots.length / itemsPerPage));
-      setIsLoading(false);
     };
     
     fetchSlots();
-  }, [itemsPerPage]);
+  }, [toast]);
 
   // Apply filters when any filter changes
   useEffect(() => {
-    applyFilters();
-  }, [searchQuery, locationFilter, statusFilter, sizeFilter, vehicleTypeFilter]);
+    applyFilters(slots);
+  }, [searchQuery, locationFilter, statusFilter, sizeFilter, vehicleTypeFilter, slots, user?.role]);
 
   // Handle search and filters
-  const applyFilters = () => {
-    let filtered = slots;
+  const applyFilters = (allSlots: ParkingSlot[]) => {
+    let filtered = [...allSlots];
     
     // Apply search query
     if (searchQuery) {
@@ -122,7 +132,7 @@ export default function SlotsPage() {
 
   // Handle search button click
   const handleSearch = () => {
-    applyFilters();
+    applyFilters(slots);
   };
 
   // Reset all filters
@@ -132,6 +142,7 @@ export default function SlotsPage() {
     setStatusFilter("");
     setSizeFilter("");
     setVehicleTypeFilter("");
+    applyFilters(slots);
   };
 
   // Get paginated data
@@ -276,11 +287,11 @@ export default function SlotsPage() {
                             // Toggle slot status
                             const updatedSlots = slots.map(s =>
                               s.id === slot.id
-                                ? { ...s, status: s.status === 'available' ? 'unavailable' : 'available' as SlotStatus }
+                                ? { ...s, status: s.status === 'available' ? 'unavailable' as SlotStatus : 'available' as SlotStatus }
                                 : s
                             );
                             setSlots(updatedSlots);
-                            applyFilters();
+                            applyFilters(updatedSlots);
                             
                             toast({
                               title: "Slot status updated",

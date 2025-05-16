@@ -27,17 +27,12 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -77,99 +72,144 @@ export default function RequestsPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // In a real app, this would be API calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock vehicles data
-      const mockVehicles: Vehicle[] = [
-        {
-          id: 1,
-          userId: user?.id || 1,
-          plateNumber: "ABC123",
-          vehicleType: "car",
-          size: "medium",
-          attributes: { color: "Blue", model: "Toyota Camry" },
-          createdAt: "2023-05-15T10:30:00Z"
-        },
-        {
-          id: 2,
-          userId: user?.id || 1,
-          plateNumber: "XYZ789",
-          vehicleType: "motorcycle",
-          size: "small",
-          attributes: { color: "Red", model: "Honda CBR" },
-          createdAt: "2023-06-20T14:45:00Z"
-        },
-      ];
-      
-      // Mock requests data
-      const mockRequests: SlotRequest[] = [
-        {
-          id: 1,
-          userId: user?.id || 1,
-          vehicleId: 1,
-          requestStatus: "pending",
-          createdAt: "2023-07-01T09:00:00Z",
-          updatedAt: "2023-07-01T09:00:00Z",
-          vehicle: mockVehicles[0],
-        },
-        {
-          id: 2,
-          userId: user?.id || 1,
-          vehicleId: 2,
-          slotId: 5,
-          slotNumber: "P005",
-          requestStatus: "approved",
-          createdAt: "2023-06-25T11:30:00Z",
-          updatedAt: "2023-06-26T10:15:00Z",
-          vehicle: mockVehicles[1],
-        },
-        {
-          id: 3,
-          userId: user?.id || 1,
-          vehicleId: 1,
-          requestStatus: "rejected",
-          createdAt: "2023-06-20T14:00:00Z",
-          updatedAt: "2023-06-21T09:45:00Z",
-          vehicle: mockVehicles[0],
-        }
-      ];
-
-      // If admin, add requests from other users
-      if (user?.role === 'ADMIN') {
-        mockRequests.push({
-          id: 4,
-          userId: 2,
-          vehicleId: 3,
-          requestStatus: "pending",
-          createdAt: "2023-07-02T10:30:00Z",
-          updatedAt: "2023-07-02T10:30:00Z",
-          vehicle: {
+      setIsLoading(true);
+      try {
+        // In a real app, this would be API calls
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Mock vehicles data
+        const mockVehicles: Vehicle[] = [
+          {
+            id: 1,
+            userId: user?.id || 1,
+            plateNumber: "ABC123",
+            vehicleType: "car",
+            size: "medium",
+            attributes: { color: "Blue", model: "Toyota Camry" },
+            createdAt: "2023-05-15T10:30:00Z"
+          },
+          {
+            id: 2,
+            userId: user?.id || 1,
+            plateNumber: "XYZ789",
+            vehicleType: "motorcycle",
+            size: "small",
+            attributes: { color: "Red", model: "Honda CBR" },
+            createdAt: "2023-06-20T14:45:00Z"
+          },
+          {
             id: 3,
-            userId: 2,
+            userId: user?.id || 1,
             plateNumber: "DEF456",
             vehicleType: "car",
             size: "large",
             attributes: { color: "Black", model: "BMW X5" },
             createdAt: "2023-05-10T08:45:00Z"
-          },
-          user: {
-            name: "John Doe",
-            email: "john.doe@example.com"
           }
+        ];
+        
+        // Mock requests data
+        const mockRequests: SlotRequest[] = [
+          {
+            id: 1,
+            userId: user?.id || 1,
+            vehicleId: 1,
+            requestStatus: "pending",
+            createdAt: "2023-07-01T09:00:00Z",
+            updatedAt: "2023-07-01T09:00:00Z",
+            vehicle: mockVehicles[0],
+          },
+          {
+            id: 2,
+            userId: user?.id || 1,
+            vehicleId: 2,
+            slotId: 5,
+            slotNumber: "P005",
+            requestStatus: "approved",
+            createdAt: "2023-06-25T11:30:00Z",
+            updatedAt: "2023-06-26T10:15:00Z",
+            vehicle: mockVehicles[1],
+          },
+          {
+            id: 3,
+            userId: user?.id || 1,
+            vehicleId: 3,
+            requestStatus: "rejected",
+            createdAt: "2023-06-20T14:00:00Z",
+            updatedAt: "2023-06-21T09:45:00Z",
+            vehicle: mockVehicles[2],
+          }
+        ];
+
+        // If admin, add requests from other users
+        if (user?.role === 'ADMIN') {
+          mockRequests.push({
+            id: 4,
+            userId: 2,
+            vehicleId: 3,
+            requestStatus: "pending",
+            createdAt: "2023-07-02T10:30:00Z",
+            updatedAt: "2023-07-02T10:30:00Z",
+            vehicle: {
+              id: 3,
+              userId: 2,
+              plateNumber: "GHI789",
+              vehicleType: "car",
+              size: "large",
+              attributes: { color: "Black", model: "BMW X5" },
+              createdAt: "2023-05-10T08:45:00Z"
+            },
+            user: {
+              name: "John Doe",
+              email: "john.doe@example.com"
+            }
+          });
+          
+          // Add more mock data for admin
+          mockRequests.push({
+            id: 5,
+            userId: 3,
+            vehicleId: 4,
+            slotId: 10,
+            slotNumber: "P010",
+            requestStatus: "approved",
+            createdAt: "2023-07-03T14:20:00Z",
+            updatedAt: "2023-07-04T09:15:00Z",
+            vehicle: {
+              id: 4,
+              userId: 3,
+              plateNumber: "JKL321",
+              vehicleType: "motorcycle",
+              size: "small",
+              attributes: { color: "Yellow", model: "Suzuki GSX" },
+              createdAt: "2023-06-01T11:30:00Z"
+            },
+            user: {
+              name: "Jane Smith",
+              email: "jane.smith@example.com"
+            }
+          });
+        }
+        
+        setVehicles(mockVehicles);
+        setRequests(mockRequests);
+        setFilteredRequests(mockRequests);
+        setTotalItems(mockRequests.length);
+        setTotalPages(Math.ceil(mockRequests.length / itemsPerPage));
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load requests data. Please try again later.",
+          variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
-      
-      setVehicles(mockVehicles);
-      setRequests(mockRequests);
-      setFilteredRequests(mockRequests);
-      setTotalItems(mockRequests.length);
-      setTotalPages(Math.ceil(mockRequests.length / itemsPerPage));
-      setIsLoading(false);
     };
     
     fetchData();
-  }, [user, itemsPerPage]);
+  }, [user, itemsPerPage, toast]);
 
   // Apply filters when status filter changes
   useEffect(() => {
@@ -236,6 +276,8 @@ export default function RequestsPage() {
       title: "Request submitted",
       description: "Your parking slot request has been submitted successfully.",
     });
+    
+    setIsRequestDialogOpen(false);
   };
 
   // Handle approving a request (admin only)
