@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -29,30 +28,28 @@ const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  role: z.enum(["USER", "ADMIN"]),
 });
 
 export default function Register() {
-  const { register, isAuthenticated, isLoading } = useAuth();
+  const { register: registerUser, isAuthenticated, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       email: "",
       password: "",
-      confirmPassword: "",
-    },
+      role: "USER",},
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      await register(values.name, values.email, values.password);
+      await registerUser(values.name, values.email, values.password, values.role);
+    } catch (err) {
+      console.error("Registration error:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -82,9 +79,11 @@ export default function Register() {
               Create an account to get started
             </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Name */}
                 <FormField
                   control={form.control}
                   name="name"
@@ -92,17 +91,14 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="John Doe" 
-                          {...field} 
-                          autoComplete="name"
-                        />
+                        <Input placeholder="John Doe" {...field} autoComplete="name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
+                {/* Email */}
                 <FormField
                   control={form.control}
                   name="email"
@@ -110,10 +106,10 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="you@example.com" 
-                          {...field} 
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          {...field}
                           autoComplete="email"
                         />
                       </FormControl>
@@ -121,7 +117,8 @@ export default function Register() {
                     </FormItem>
                   )}
                 />
-                
+
+                {/* Password */}
                 <FormField
                   control={form.control}
                   name="password"
@@ -129,10 +126,10 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="••••••••" 
-                          {...field} 
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          {...field}
                           autoComplete="new-password"
                         />
                       </FormControl>
@@ -140,32 +137,35 @@ export default function Register() {
                     </FormItem>
                   )}
                 />
-                
+
+                {/* Role */}
                 <FormField
                   control={form.control}
-                  name="confirmPassword"
+                  name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
+                      <FormLabel>Role</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="••••••••" 
-                          {...field} 
-                          autoComplete="new-password"
-                        />
+                        <select
+                          {...field}
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
+                        >
+                          <option value="USER">USER</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
             </Form>
           </CardContent>
+
           <CardFooter className="text-center">
             <p className="text-sm text-muted-foreground mx-auto">
               Already have an account?{" "}

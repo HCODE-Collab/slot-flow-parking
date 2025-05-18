@@ -1,7 +1,9 @@
-
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User, Role } from '@/types';
+import axios,{AxiosError} from 'axios';
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@/types';
+
+const BASE_URL = "http://localhost:5000/api/v1";
 
 interface AuthContextType {
   user: User | null;
@@ -9,7 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role: "USER" | "ADMIN") => Promise<void>;
   logout: () => void;
 }
 
@@ -22,7 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // On initial load, check for token and user in localStorage
+  // Load from localStorage on app start
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -36,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  // Save token and user to localStorage whenever they change
+  // Keep localStorage in sync
   useEffect(() => {
     if (token && user) {
       localStorage.setItem('token', token);
@@ -47,80 +49,87 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token, user]);
 
-  // Mock login function - would be replaced with actual API call
+  // LOGIN
   const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      
-      // Mock API request
-      // In a real app, you'd make a fetch/axios request to your backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user and token - would come from the API response
-      const mockUser: User = {
-        id: 1,
-        name: email.split('@')[0],
-        email: email,
-        role: email.includes('admin') ? 'ADMIN' : 'USER',
-      };
-      
-      const mockToken = 'mock-jwt-token-' + Math.random().toString(36).substring(2);
-      
-      setUser(mockUser);
-      setToken(mockToken);
-      setIsAuthenticated(true);
-      toast({
-        title: "Login successful!",
-        description: `Welcome back, ${mockUser.name}!`,
-      });
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    setIsLoading(true);
 
-  // Mock register function - would be replaced with actual API call
-  const register = async (name: string, email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      
-      // Mock API request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user and token
-      const mockUser: User = {
-        id: Math.floor(Math.random() * 1000),
-        name,
-        email,
-        role: 'USER',
-      };
-      
-      const mockToken = 'mock-jwt-token-' + Math.random().toString(36).substring(2);
-      
-      setUser(mockUser);
-      setToken(mockToken);
-      setIsAuthenticated(true);
-      toast({
-        title: "Registration successful!",
-        description: `Welcome, ${name}!`,
-      });
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
+    const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
+    const data = res.data.data;
+
+    setUser(data.user);
+    setToken(data.token);
+    setIsAuthenticated(true);
+
+    toast({
+      title: "Login successful!",
+      description: `Welcome back, ${data.user.name}!`,
+    });
+  } catch (error) {
+    let message = "Login failed";
+    if (axios.isAxiosError(error) && error.response?.data?.message) {
+      message = error.response.data.message;
     }
-  };
+
+    toast({
+      title: "Login failed",
+      description: message,
+      variant: "destructive",
+    });
+
+    throw new Error(message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  // REGISTER
+const register = async (
+  name: string,
+  email: string,
+  password: string,
+  role: "USER" | "ADMIN"
+) => {
+  try {
+    setIsLoading(true);
+
+    const res = await axios.post(`${BASE_URL}/auth/register`, {
+      name,
+      email,
+      password,
+      role,
+    });
+
+    const data = res.data;
+
+    setUser(data.user);
+    setToken(data.token);
+    setIsAuthenticated(true);
+
+    toast({
+      title: "Registration successful!",
+      description: `Welcome, ${data.user.name}!`,
+    });
+
+  } catch (error) {
+    let message = "Registration failed";
+
+    if (axios.isAxiosError(error) && error.response?.data?.message) {
+      message = error.response.data.message;
+    }
+
+    toast({
+      title: "Registration failed",
+      description: message,
+      variant: "destructive",
+    });
+
+    throw new Error(message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const logout = () => {
     setUser(null);
@@ -128,9 +137,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAuthenticated(false);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+
     toast({
       title: "Logged out",
-      description: "You have been logged out successfully."
+      description: "You have been logged out successfully.",
     });
   };
 
@@ -153,7 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
